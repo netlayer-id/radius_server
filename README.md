@@ -22,7 +22,7 @@
 ## Quick Installation
 
 ```bash
-sudo wget https://files.netlayer.id/radius/install.sh && sudo chmod +x ./install.sh && sudo bash ./install.sh
+sudo apt install git -y && git clone https://github.com/netlayer-id/radius_server.git && cd ./radius_server && sudo chmod +x ./netlayer && sudo chmod +x ./server.sh && sudo ./server.sh
 ```
 
 ## Manual Execution
