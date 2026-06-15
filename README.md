@@ -29,13 +29,13 @@ sudo apt install git -y && sudo git clone https://github.com/netlayer-id/radius_
 
 ## Manual Execution
 ```bash
-chmod +x ./netlayer
-./netlayer
+sudo chmod +x ./netlayer
+sudo ./netlayer
 ```
 ## Running as System Service
 ```bash 
-chmod +x ./server.sh
-./server.sh
+sudo chmod +x ./server.sh
+sudo bash ./server.sh
 ```
 ### Make sure these ports are open in your firewall:
 ```bash
