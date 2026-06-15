@@ -6,6 +6,8 @@
 
 **Official Website:** [https://netlayer.id](https://netlayer.id)
 
+**WhatsApp Group:** [https://chat.whatsapp.com/EVvEVq0sfl24d6SpmRhS5j](https://chat.whatsapp.com/EVvEVq0sfl24d6SpmRhS5j)
+
 **NetLayer** is a lightweight, high-performance RADIUS server built with PHP, designed specifically for ISP (Internet Service Provider) and public hotspot management. It provides authentication, authorization, and accounting (AAA) for PPPoE and Hotspot users with enterprise-grade features.
 
 ## Key Features
