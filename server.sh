@@ -1,36 +1,44 @@
 #!/bin/bash
 
+# ==============================================================================
+# Netlayer RADIUS Management Utility
+# ==============================================================================
+
 RADIUS_SERVICE_NAME="netlayer-radius.service"
 RADIUS_SERVICE_FILE="/etc/systemd/system/$RADIUS_SERVICE_NAME"
-
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 NETLAYER_EXEC="$SCRIPT_DIR/netlayer"
 
+# Colors & Icons
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# --- Helper Functions ---
+
+log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[✔]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[!]${NC} $1"; }
+log_error() { echo -e "${RED}[✘]${NC} $1"; }
 
 check_root() {
     if [ "$EUID" -ne 0 ]; then
-        echo -e "${RED}Error: Skrip ini harus dijalankan sebagai root atau dengan sudo.${NC}"
-        echo "Coba jalankan dengan: sudo $0"
+        log_error "This script must be run as root or with sudo."
+        echo "   Try: sudo $0"
         exit 1
     fi
 }
 
 check_netlayer() {
     if [ ! -f "$NETLAYER_EXEC" ]; then
-        echo -e "${RED}Error: File netlayer tidak ditemukan di $NETLAYER_EXEC${NC}"
-        echo -e "${YELLOW}Pastikan file netlayer berada di direktori yang sama dengan script ini.${NC}"
+        log_error "Executable 'netlayer' not found at $NETLAYER_EXEC"
+        log_warn "Please ensure the file is in the same directory as this script."
         exit 1
     fi
-    
-    if [ ! -x "$NETLAYER_EXEC" ]; then
-        echo -e "${YELLOW}Memberikan permission execute pada netlayer...${NC}"
-        chmod +x "$NETLAYER_EXEC"
-    fi
+    [ ! -x "$NETLAYER_EXEC" ] && chmod +x "$NETLAYER_EXEC"
 }
 
 create_radius_service() {
@@ -52,124 +60,91 @@ WantedBy=multi-user.target
 EOF
 }
 
+# --- Action Functions ---
+
 start_radius() {
-    chmod +x "$SCRIPT_DIR/netlayer"
-    chmod -R 777 "$SCRIPT_DIR/data/"
-    chmod -R 777 "$SCRIPT_DIR/voucher/"
-    chmod -R 777 "$SCRIPT_DIR/backup/"
+    log_info "Initializing RADIUS service..."
+    check_netlayer
     
-    echo -e "\n${YELLOW}Memulai RADIUS service...${NC}"
+    # Ensure permissions
+    for dir in data voucher backup; do
+        [ -d "$SCRIPT_DIR/$dir" ] && chmod -R 777 "$SCRIPT_DIR/$dir"
+    done
     
     if [ ! -f "$RADIUS_SERVICE_FILE" ]; then
-        echo -e "${YELLOW}Service belum terinstall, melakukan instalasi...${NC}"
-        check_netlayer
+        log_info "Installing service configuration..."
         create_radius_service
         systemctl daemon-reload
     fi
     
-    # Start service
-    systemctl enable "$RADIUS_SERVICE_NAME" 2>/dev/null
+    systemctl enable "$RADIUS_SERVICE_NAME" >/dev/null 2>&1
     if systemctl start "$RADIUS_SERVICE_NAME" 2>/dev/null; then
-        echo -e "${GREEN}RADIUS service started.${NC}"
+        log_success "RADIUS service started successfully."
     else
-        echo -e "${RED}Gagal memulai RADIUS service.${NC}"
-        systemctl status "$RADIUS_SERVICE_NAME" --no-pager -l
+        log_error "Failed to start RADIUS service."
+        systemctl status "$RADIUS_SERVICE_NAME" --no-pager -l | head -n 5
     fi
 }
 
 stop_radius() {
-    echo -e "\n${YELLOW}Menghentikan RADIUS service...${NC}"
-    
+    log_info "Stopping RADIUS service..."
     if systemctl stop "$RADIUS_SERVICE_NAME" 2>/dev/null; then
-        systemctl disable "$RADIUS_SERVICE_NAME" 2>/dev/null
-        echo -e "${GREEN}RADIUS service stopped.${NC}"
-    else
-        echo -e "${YELLOW}Service tidak sedang berjalan atau belum terinstall.${NC}"
-    fi
-    
-    # Remove service file
-    if [ -f "$RADIUS_SERVICE_FILE" ]; then
+        systemctl disable "$RADIUS_SERVICE_NAME" >/dev/null 2>&1
         rm -f "$RADIUS_SERVICE_FILE"
         systemctl daemon-reload
-        echo -e "${GREEN}File service dihapus.${NC}"
+        log_success "Service stopped and configuration removed."
+    else
+        log_warn "Service is not running or not installed."
     fi
 }
 
 restart_radius() {
-    echo -e "\n${YELLOW}Me-restart RADIUS service...${NC}"
-    
+    log_info "Restarting RADIUS service..."
     if systemctl restart "$RADIUS_SERVICE_NAME" 2>/dev/null; then
-        echo -e "${GREEN}RADIUS service restarted.${NC}"
+        log_success "RADIUS service restarted."
     else
-        echo -e "${RED}Gagal me-restart RADIUS service.${NC}"
-        echo -e "${YELLOW}Pastikan service sudah di-start terlebih dahulu.${NC}"
+        log_error "Failed to restart. Ensure the service is active first."
     fi
 }
 
 status_radius() {
-    echo -e "\n${YELLOW}Status RADIUS service:${NC}"
-    
-    if [ -f "$RADIUS_SERVICE_FILE" ]; then
-        systemctl status "$RADIUS_SERVICE_NAME" --no-pager -l
+    echo -e "\n${BOLD}>>> Current Status:${NC}"
+    if systemctl is-active --quiet "$RADIUS_SERVICE_NAME"; then
+        echo -e "${GREEN}● ACTIVE${NC}"
     else
-        echo -e "${RED}Service belum terinstall.${NC}"
-        echo -e "${YELLOW}Gunakan opsi 1 (Start) untuk menginstall dan memulai service.${NC}"
+        echo -e "${RED}○ INACTIVE${NC}"
     fi
+    systemctl status "$RADIUS_SERVICE_NAME" --no-pager -l | grep -v "Active:"
 }
 
 show_menu() {
     clear
-    echo -e "${BLUE}=========================================${NC}"
-    echo -e "    ${YELLOW}Netlayer Radius Service${NC}"
-    echo -e "${BLUE}=========================================${NC}"
-    echo -e "${GREEN} AUTH PORT : 1812${NC}"
-    echo -e "${GREEN} ACCT PORT : 1813${NC}"
-    echo -e "${GREEN} HTTP PORT : 8080${NC}"
-    echo ""
-    echo " 1. Start Service"
-    echo " 2. Stop Service"
-    echo " 3. Restart"
-    echo " 4. Status"
-    echo ""
-    echo " 0. Exit"
-    echo -e "${BLUE}=========================================${NC}"
+    echo -e "${BLUE}╔═══════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${NC}         ${BOLD}NETLAYER RADIUS MANAGEMENT${NC}            ${BLUE}║${NC}"
+    echo -e "${BLUE}╠═══════════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║${NC}   ${GREEN}Auth Port:${NC} 1812  ${GREEN}Acct Port:${NC} 1813     ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}   ${GREEN}HTTP Port:${NC} 8080                        ${BLUE}║${NC}"
+    echo -e "${BLUE}╠═══════════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║${NC}   1) Start Service      2) Stop Service        ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}   3) Restart Service    4) Check Status        ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}                                               ${BLUE}║${NC}"
+    echo -e "${BLUE}║${NC}   0) Exit                                     ${BLUE}║${NC}"
+    echo -e "${BLUE}╚═══════════════════════════════════════════════╝${NC}"
 }
 
-press_enter() {
-    echo ""
-    read -p "Tekan [Enter] untuk kembali ke menu..."
-}
+# --- Main Loop ---
 
 check_root
 
 while true; do
     show_menu
-    read -p "Pilih opsi [0-4]: " choice
-
+    read -p "Select an option [0-4]: " choice
     case $choice in
-        1)
-            start_radius
-            press_enter
-            ;;
-        2)
-            stop_radius
-            press_enter
-            ;;
-        3)
-            restart_radius
-            press_enter
-            ;;
-        4)
-            status_radius
-            press_enter
-            ;;
-        0)
-            echo -e "\n${BLUE}Terima kasih! Keluar dari program.${NC}\n"
-            break
-            ;;
-        *)
-            echo -e "\n${RED}Pilihan tidak valid. Harap coba lagi.${NC}"
-            sleep 2
-            ;;
+        1) start_radius; read -p "Press Enter to continue...";;
+        2) stop_radius; read -p "Press Enter to continue...";;
+        3) restart_radius; read -p "Press Enter to continue...";;
+        4) status_radius; read -p "Press Enter to continue...";;
+        0) echo -e "\nExiting... Goodbye!\n"; exit 0;;
+        *) echo -e "${RED}Invalid selection. Try again.${NC}"; sleep 1;;
     esac
 done
