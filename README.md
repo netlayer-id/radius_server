@@ -51,5 +51,13 @@ sudo firewall-cmd --add-port=8080/tcp --permanent
 sudo firewall-cmd --reload
 ```
 
-
-
+### DEMO NETLAYER RADIUS
+<table style="margin-bottom:20px">
+  <tr><td style="width:165px">Demo URL</td><td>: <a href="https://demo.netlayer.id/login">https://demo.netlayer.id/login</a></td></tr>
+  <tr><td>Username</td><td>demo@netlayer.id</td></tr>
+  <tr><td>Password</td><td>1234</td></tr>
+  <tr><td>Radius Server</td><td>103.103.21.133</td></tr>
+  <tr><td>Radius Secret</td><td>secret123</td></tr>
+  <tr><td>Authentication Port</td><td>1812</td></tr>
+  <tr><td>Accounting Port</td><td>1813</td></tr>
+</table>
