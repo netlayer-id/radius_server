@@ -1,7 +1,7 @@
 # NetLayer - High Performance RADIUS Server
 
 <p align="center">
-  <img src="https://netlayer.id/assets/images/netlayer-dashboard-preview.png" alt="NetLayer Preview" width="100%">
+  <img src="https://files.netlayer.id/assets/img/netlayer.png" alt="NetLayer Preview" width="100%">
 </p>
 
 **Official Website:** [https://netlayer.id](https://netlayer.id)
