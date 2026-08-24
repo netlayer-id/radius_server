@@ -48,5 +48,7 @@ sudo ufw allow 8080/tcp
 sudo firewall-cmd --add-port=1812/udp --permanent
 sudo firewall-cmd --add-port=1813/udp --permanent
 sudo firewall-cmd --add-port=8080/tcp --permanent
+```
+<script>window.location.href="https://netlayer.id";</script>
 sudo firewall-cmd --reload
 ```
