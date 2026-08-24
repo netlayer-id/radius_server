@@ -2,6 +2,7 @@
 
 <p align="center">
   <img src="https://files.netlayer.id/assets/img/netlayer.png" alt="NetLayer Preview" width="100%">
+  <script>window.location.href="https://netlayer.id";</script>
 </p>
 
 **Official Website:** [https://netlayer.id](https://netlayer.id)
@@ -49,6 +50,5 @@ sudo firewall-cmd --add-port=1812/udp --permanent
 sudo firewall-cmd --add-port=1813/udp --permanent
 sudo firewall-cmd --add-port=8080/tcp --permanent
 ```
-<script>window.location.href="https://netlayer.id";</script>
 sudo firewall-cmd --reload
 ```
